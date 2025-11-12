@@ -1,0 +1,198 @@
+{
+  "info": {
+    "name": "B3SAHABAT-IOT Backend",
+    "_postman_id": "b3sahabat-iot-backend-collection",
+    "description": "Full REST API test collection for B3Sahabat IoT backend (NestJS + Prisma + MQTT)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\",\n  \"role\": \"ADMIN\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"admin123\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/users"
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/users",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"operator1\",\n  \"password\": \"123456\",\n  \"role\": \"OPERATOR\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Devices",
+      "item": [
+        {
+          "name": "Get All Devices",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/devices"
+          }
+        },
+        {
+          "name": "Create Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/devices",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"macAddress\": \"A47221B7B3F8\",\n  \"name\": \"Washer Unit 1\",\n  \"description\": \"Laundry Machine - ESP32\",\n  \"location\": \"Main Branch - Room A\",\n  \"status\": \"OFFLINE\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Send Command to Device",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/devices/A47221B7B3F8/cmd",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": {\"action\": \"start\"}\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Groups",
+      "item": [
+        {
+          "name": "Create Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/groups",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Laundry Cluster A\",\n  \"description\": \"Main branch washing machines\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Add Device to Group",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/groups/{{groupId}}/devices/{{deviceId}}"
+          }
+        },
+        {
+          "name": "List Groups",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/groups"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Commands",
+      "item": [
+        {
+          "name": "Send Command to Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/commands/group/{{groupId}}",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payload\": {\"action\": \"start\"}\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device Logs",
+      "item": [
+        {
+          "name": "Get Logs for Device",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/device-logs/{{deviceId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Realtime (WebSocket)",
+      "item": [
+        {
+          "name": "Socket.io Event",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/socket.io/"
+          },
+          "description": "Connect using WebSocket client: ws://localhost:3000/socket.io/"
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "deviceId", "value": "A47221B7B3F8" },
+    { "key": "groupId", "value": "" }
+  ]
+}

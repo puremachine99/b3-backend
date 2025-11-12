@@ -1,0 +1,105 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  role      Role     @default(OPERATOR)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  logs DeviceLog[]
+}
+
+model Device {
+  id           String       @id @default(cuid())
+  serialNumber String       @unique
+  name         String
+  description  String?
+  location     String?
+  status       DeviceStatus @default(OFFLINE)
+  lastSeenAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  logs        DeviceLog[]
+  memberships DeviceGroupMembership[]
+}
+
+model DeviceLog {
+  id        String   @id @default(cuid())
+  deviceId  String
+  userId    String?
+  eventType LogType
+  command   String?
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id])
+  user   User?  @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Group {
+  id          String                  @id @default(cuid())
+  name        String                  @unique
+  description String?                 @db.Text
+  metadata    Json?
+  createdAt   DateTime                @default(now())
+  updatedAt   DateTime                @updatedAt
+  memberships DeviceGroupMembership[]
+}
+
+model DeviceGroupMembership {
+  id        String   @id @default(cuid())
+  deviceId  String
+  groupId   String
+  createdAt DateTime @default(now())
+
+  device Device @relation(fields: [deviceId], references: [id])
+  group  Group  @relation(fields: [groupId], references: [id])
+
+  @@unique([deviceId, groupId])
+}
+
+model DeviceCommand {
+  id         String    @id @default(cuid())
+  commandId  String    @unique
+  type       String
+  payload    Json
+  targetType String
+  target     String
+  status     String    @default("PENDING")
+  retries    Int       @default(0)
+  executedAt DateTime?
+  error      String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+}
+
+enum Role {
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  RUNNING
+  IDLE
+  ERROR
+}
+
+enum LogType {
+  COMMAND
+  STATUS
+  ERROR
+  SYSTEM
+}
