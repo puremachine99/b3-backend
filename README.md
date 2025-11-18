@@ -1,4 +1,4 @@
-# B3Sahabat IoT Backend – panduan santai ala driver Gojek 🚀
+# B3Sahabat IoT Backend 🚀
 
 Backend ini dibuat dengan NestJS + Prisma + MQTT. Tugasnya: ngobrol sama device IoT, simpan log, dan kirim update realtime ke frontend lewat WebSocket. garis besarnya "INI REMOTE !"
 
