@@ -10,6 +10,7 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   username  String   @unique
+  email     String   @unique
   password  String
   role      Role     @default(OPERATOR)
   createdAt DateTime @default(now())
@@ -24,6 +25,8 @@ model Device {
   name         String
   description  String?
   location     String?
+  latitude     Float?
+  longitude    Float?
   status       DeviceStatus @default(OFFLINE)
   lastSeenAt   DateTime?
   createdAt    DateTime     @default(now())
@@ -98,8 +101,8 @@ enum DeviceStatus {
 }
 
 enum LogType {
-  COMMAND
   STATUS
-  ERROR
+  COMMAND
   SYSTEM
+  ERROR
 }

@@ -1,9 +1,11 @@
-import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Delete, Param, Body, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/auth.decorator';
 import { Role } from '@prisma/client';
+import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -12,7 +14,8 @@ export class UsersController {
 
   @Post()
   @Roles(Role.ADMIN)
-  create(@Body() body: { username: string; password: string; role?: Role }) {
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  create(@Body() body: CreateUserDto) {
     return this.usersService.create(body);
   }
 
@@ -30,7 +33,8 @@ export class UsersController {
 
   @Patch(':id')
   @Roles(Role.ADMIN)
-  update(@Param('id') id: string, @Body() body: any) {
+  @UsePipes(new ValidationPipe({ whitelist: true }))
+  update(@Param('id') id: string, @Body() body: UpdateUserDto) {
     return this.usersService.update(id, body);
   }
 

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -32,15 +32,31 @@ export class GroupsService {
     return this.prisma.group.delete({ where: { id } });
   }
 
-  async addDevice(groupId: string, deviceId: string) {
+  async addDevice(groupId: string, deviceSerial: string) {
+    const device = await this.prisma.device.findUnique({
+      where: { serialNumber: deviceSerial },
+      select: { id: true },
+    });
+    if (!device) {
+      throw new NotFoundException(`Device ${deviceSerial} not found`);
+    }
+
     return this.prisma.deviceGroupMembership.create({
-      data: { groupId, deviceId },
+      data: { groupId, deviceId: device.id },
     });
   }
 
-  async removeDevice(groupId: string, deviceId: string) {
+  async removeDevice(groupId: string, deviceSerial: string) {
+    const device = await this.prisma.device.findUnique({
+      where: { serialNumber: deviceSerial },
+      select: { id: true },
+    });
+    if (!device) {
+      throw new NotFoundException(`Device ${deviceSerial} not found`);
+    }
+
     return this.prisma.deviceGroupMembership.deleteMany({
-      where: { groupId, deviceId },
+      where: { groupId, deviceId: device.id },
     });
   }
 
