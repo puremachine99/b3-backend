@@ -1,98 +1,70 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# B3Sahabat IoT Backend – panduan santai ala driver Gojek 🚀
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Backend ini dibuat dengan NestJS + Prisma + MQTT. Tugasnya: ngobrol sama device IoT, simpan log, dan kirim update realtime ke frontend lewat WebSocket. garis besarnya "INI REMOTE !"
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Apa yang bisa dilakukan?
+- **Device status realtime:** Terima pesan LWT dari MQTT, update status device (ONLINE/OFFLINE) di database, dan siarkan lewat socket (`device-connection`, `device-availability`, `device-status`).
+- **Kirim perintah ke device:** Endpoint `POST /devices/:serialNumber/cmd`.
+- **Pantau log/device:** Simpan log ke database dan broadcast ke frontend (`device-log`).
+- **REST API untuk device:** CRUD, plus endpoint baru `GET /devices/:id/status` untuk cek status terakhir.
 
-## Description
+## Siapkan lingkungan (pit stop dulu)
+1) Pastikan sudah install **Node.js 18+** dan **npm**.  
+2) Clone repo dan install dependency:
+   ```bash
+   npm install
+   ```
+3) Siapkan environment:
+   - Copy `.env.example` (jika ada) jadi `.env`.
+   - Set `DATABASE_URL` (PostgreSQL) dan `MQTT_URL` (contoh: `mqtt://localhost:1883`).
+4) Migrasi dan generate Prisma client:
+   ```bash
+   npx prisma migrate deploy
+   npx prisma generate
+   ```
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Cara jalanin (gas tipis-tipis)
+- **Dev mode watch**  
+  ```bash
+  npm run start:dev
+  ```
+- **Build**  
+  ```bash
+  npm run build
+  ```
+- **Prod** (setelah build)  
+  ```bash
+  npm run start:prod
+  ```
+- **Tes**  
+  ```bash
+  npm test
+  ```
 
-## Project setup
+## Alur MQTT & WebSocket (biar kebayang)
+1) **LWT dari device** (`device/{serial}/lwt`): payload `ONLINE`/`OFFLINE`.  
+   - Update kolom `status` + `lastSeenAt` di tabel Device.  
+   - Broadcast ke WebSocket:
+     - `device-connection` (status string)
+     - `device-availability` (boolean)
+     - `device-status` ({ status })
+     - `device-log` (ringkasan readable)
+2) **Status update** (`device/{serial}/status`): payload JSON/text.  
+   - Disiarkan ke WebSocket `device-status` + `device-log`, dicatat ke DB.
 
-```bash
-$ npm install
-```
+## Endpoint penting buat frontend
+- `GET /devices/:id/status` – ambil status, serialNumber, lastSeenAt.  
+- `GET /devices` / `GET /devices/:id` – data device.  
+- `POST /devices/:serialNumber/cmd` – kirim perintah.
 
-## Compile and run the project
+Semua endpoint yang butuh login pakai header `Authorization: Bearer <token>`.
 
-```bash
-# development
-$ npm run start
+## Postman collection
+File `B3Sahabat-IoT.postman_collection.json` sudah ditambah request **Get Device Status** (`/devices/{{deviceId}}/status`). Import aja ke Postman/Insomnia.
 
-# watch mode
-$ npm run start:dev
+## Tips cepat ala lapangan
+- Kalau MQTT broker beda host/port, sesuaikan `MQTT_URL` di `.env`.
+- Cek log di console untuk topik MQTT yang gagal subscribe.
+- Test WebSocket dari browser/devtools: event `device-connection`, `device-availability`, `device-status`, `device-log` dikirim ke room deviceId.
 
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
-```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
-```
-
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+Selamat ngebut! Kalau ada error, baca log dulu—ibarat dengar klakson di jalan, itu tanda ada yang perlu dibereskan. 👍
