@@ -1,4 +1,4 @@
-import { PartialType } from '@nestjs/mapped-types';
+import { PartialType } from '@nestjs/swagger';
 import { CreateUserDto } from './create-user.dto';
 
 // Extends create DTO and makes all fields optional for PATCH
