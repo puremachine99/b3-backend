@@ -10,7 +10,7 @@ export class CommandsController {
 
   @Post('/device/:id')
   @ApiOperation({ summary: 'Broadcast a command payload to a single device channel' })
-  @ApiParam({ name: 'id', description: 'Device identifier' })
+  @ApiParam({ name: 'id', description: 'Device ID (not serial number)' })
   @ApiBody({ type: SendCommandDto })
   @ApiOkResponse({ description: 'Command published to the device-specific topic' })
   sendToDevice(@Param('id') id: string, @Body() dto: SendCommandDto) {

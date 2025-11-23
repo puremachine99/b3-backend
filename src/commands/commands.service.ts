@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { MqttService } from '../mqtt/mqtt.service';
 import { GroupsService } from '../groups/groups.service';
@@ -14,19 +14,28 @@ export class CommandsService {
   ) {}
 
   async sendToDevice(deviceId: string, payload: any) {
+    const device = await this.prisma.device.findUnique({
+      where: { id: deviceId },
+      select: { id: true, serialNumber: true },
+    });
+
+    if (!device) {
+      throw new NotFoundException(`Device with id ${deviceId} not found`);
+    }
+
     await this.prisma.deviceCommand.create({
       data: {
         commandId: `cmd_${Date.now()}`,
         type: 'device',
         payload,
         targetType: 'device',
-        target: deviceId,
+        target: device.id,
         status: 'SENT',
       },
     });
 
-    this.mqtt.publishCommand(deviceId, payload);
-    this.logger.log(`Sent command to ${deviceId}`);
+    this.mqtt.publishCommand(device.serialNumber, payload);
+    this.logger.log(`Sent command to ${device.id}`);
   }
 
   async sendToGroup(groupId: string, payload: any) {

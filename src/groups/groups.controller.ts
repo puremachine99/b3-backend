@@ -64,7 +64,7 @@ export class GroupsController {
   @Roles(Role.ADMIN, Role.OPERATOR)
   @ApiOperation({ summary: 'Attach a device to a group' })
   @ApiParam({ name: 'id', description: 'Group identifier' })
-  @ApiParam({ name: 'deviceId', description: 'Device identifier to attach' })
+  @ApiParam({ name: 'deviceId', description: 'Device ID (use database id, not serial)' })
   @ApiOkResponse({ description: 'Result of the association' })
   addDevice(@Param('id') groupId: string, @Param('deviceId') deviceId: string) {
     return this.groupsService.addDevice(groupId, deviceId);
@@ -74,16 +74,16 @@ export class GroupsController {
   @Roles(Role.ADMIN, Role.OPERATOR)
   @ApiOperation({ summary: 'Detach a device from a group' })
   @ApiParam({ name: 'id', description: 'Group identifier' })
-  @ApiParam({ name: 'deviceId', description: 'Device identifier to remove' })
+  @ApiParam({ name: 'deviceId', description: 'Device ID (use database id, not serial)' })
   @ApiOkResponse({ description: 'Result of the disassociation' })
   removeDevice(@Param('id') groupId: string, @Param('deviceId') deviceId: string) {
     return this.groupsService.removeDevice(groupId, deviceId);
   }
 
   @Get(':id/devices')
-  @ApiOperation({ summary: 'List devices inside a group' })
+  @ApiOperation({ summary: 'List device-group membership rows for a group' })
   @ApiParam({ name: 'id', description: 'Group identifier' })
-  @ApiOkResponse({ description: 'Device array belonging to the group' })
+  @ApiOkResponse({ description: 'Array of pivot records including device details' })
   listDevices(@Param('id') groupId: string) {
     return this.groupsService.listDevices(groupId);
   }

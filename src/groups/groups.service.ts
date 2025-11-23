@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../database/prisma.service';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
@@ -32,38 +32,92 @@ export class GroupsService {
     return this.prisma.group.delete({ where: { id } });
   }
 
-  async addDevice(groupId: string, deviceSerial: string) {
-    const device = await this.prisma.device.findUnique({
-      where: { serialNumber: deviceSerial },
-      select: { id: true },
-    });
+  /**
+   * Attach device using device.id (NOT serialNumber)
+   */
+  async addDevice(groupId: string, deviceId: string) {
+    const [group, device] = await Promise.all([
+      this.prisma.group.findUnique({ where: { id: groupId }, select: { id: true } }),
+      this.prisma.device.findUnique({ where: { id: deviceId }, select: { id: true } }),
+    ]);
+
+    if (!group) {
+      throw new NotFoundException(`Group with id ${groupId} not found`);
+    }
+
     if (!device) {
-      throw new NotFoundException(`Device ${deviceSerial} not found`);
+      throw new NotFoundException(`Device with id ${deviceId} not found`);
+    }
+
+    const existingMembership = await this.prisma.deviceGroupMembership.findUnique({
+      where: { deviceId_groupId: { deviceId: device.id, groupId: group.id } },
+    });
+
+    if (existingMembership) {
+      throw new ConflictException('Device already attached to this group');
     }
 
     return this.prisma.deviceGroupMembership.create({
-      data: { groupId, deviceId: device.id },
+      data: { groupId: group.id, deviceId: device.id },
     });
   }
 
-  async removeDevice(groupId: string, deviceSerial: string) {
-    const device = await this.prisma.device.findUnique({
-      where: { serialNumber: deviceSerial },
-      select: { id: true },
-    });
-    if (!device) {
-      throw new NotFoundException(`Device ${deviceSerial} not found`);
+  /**
+   * Detach device using device.id
+   */
+  async removeDevice(groupId: string, deviceId: string) {
+    const [group, device] = await Promise.all([
+      this.prisma.group.findUnique({ where: { id: groupId }, select: { id: true } }),
+      this.prisma.device.findUnique({ where: { id: deviceId }, select: { id: true } }),
+    ]);
+
+    if (!group) {
+      throw new NotFoundException(`Group with id ${groupId} not found`);
     }
 
-    return this.prisma.deviceGroupMembership.deleteMany({
-      where: { groupId, deviceId: device.id },
+    if (!device) {
+      throw new NotFoundException(`Device with id ${deviceId} not found`);
+    }
+
+    const deleted = await this.prisma.deviceGroupMembership.deleteMany({
+      where: { groupId: group.id, deviceId: device.id },
     });
+
+    if (!deleted.count) {
+      throw new NotFoundException('Device is not attached to this group');
+    }
+
+    return deleted;
   }
 
   async listDevices(groupId: string) {
+    const group = await this.prisma.group.findUnique({ where: { id: groupId }, select: { id: true } });
+
+    if (!group) {
+      throw new NotFoundException(`Group with id ${groupId} not found`);
+    }
+
     return this.prisma.deviceGroupMembership.findMany({
-      where: { groupId },
-      include: { device: true },
+      where: { groupId: group.id },
+      select: {
+        id: true,
+        groupId: true,
+        deviceId: true,
+        createdAt: true,
+        device: {
+          select: {
+            id: true,
+            serialNumber: true,
+            name: true,
+            description: true,
+            location: true,
+            status: true,
+            latitude: true,
+            longitude: true,
+            lastSeenAt: true,
+          },
+        },
+      },
     });
   }
 }

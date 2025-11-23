@@ -1,21 +1,31 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { MqttService } from './mqtt/mqtt.service';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import { MqttService } from './mqtt/mqtt.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
-  // CORS
+  const config = app.get(ConfigService);
+
+  const port = config.get<number>('APP_PORT') ?? 8000;
+  const frontendUrl = config.get<string>('FRONTEND_URL') ?? '*';
+
+  // =====================
+  // ✅ CORS (dynamic from .env)
+  // =====================
   app.enableCors({
-    // origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
-    origin: ['http://api.b3sahabat.cloud', 'http://127.0.0.1:3000'],
+    origin: frontendUrl,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    allowedHeaders: '*',
     credentials: true,
   });
 
-  // Validation
+  // =====================
+  // 🔧 GLOBAL VALIDATION
+  // =====================
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -23,24 +33,33 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger config
-  const config = new DocumentBuilder()
+  // =====================
+  // 📘 SWAGGER
+  // =====================
+  const swaggerCfg = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('REST API for your system')
     .setVersion('1.0.0')
     .addBearerAuth()
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
+  const document = SwaggerModule.createDocument(app, swaggerCfg);
   SwaggerModule.setup('docs', app, document);
 
-  // Init MQTT
+  // =====================
+  // 🔌 MQTT (optional)
+  // =====================
   const mqttService = app.get(MqttService);
-  // optional: mqttService.connect(); if you have manual connect()
+  // mqttService.connect(); // uncomment optional
 
-  await app.listen(8000);
-  console.log(`🚀 Server running on http://localhost:8000`);
-  console.log(`📘 Swagger UI available at http://localhost:8000/docs`);
+  // =====================
+  // 🚀 START
+  // =====================
+  await app.listen(port);
+
+  console.log(`🚀 Server running on port ${port}`);
+  console.log(`🌐 CORS allowed origin: ${frontendUrl}`);
+  console.log(`📘 Swagger: http://localhost:${port}/docs`);
 }
 
 bootstrap();
