@@ -14,6 +14,11 @@ async function main() {
       password: 'nopel123',
     },
     {
+      username: 'admin',
+      email: 'admin@b3sahabat.cloud',
+      password: '12345678',
+    },
+    {
       username: 'admin2',
       email: 'mynameisnoz@gmail.com',
       password: 'nozforever',
