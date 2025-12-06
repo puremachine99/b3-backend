@@ -67,14 +67,14 @@ export class RealtimeGateway
     this.server
       .to(deviceId)
       .emit('device-status', { v: 1, deviceId, payload });
-    this.logger.debug(`Broadcasted status for device ${deviceId}`);
+    this.logger.log(`Broadcasted status for device ${deviceId}`);
   }
 
   broadcastDeviceConnection(deviceId: string, status: string) {
     this.server
       .to(deviceId)
       .emit('device-connection', { v: 1, deviceId, status });
-    this.logger.debug(
+    this.logger.log(
       `Broadcasted connection for device ${deviceId}: ${status}`,
     );
   }
@@ -94,7 +94,7 @@ export class RealtimeGateway
     this.server
       .to(log.deviceId)
       .emit('device-log', { v: 1, ...log });
-    this.logger.debug(
+    this.logger.log(
       `Broadcasted device log for ${log.deviceId}: ${log.type}`,
     );
   }
@@ -103,7 +103,7 @@ export class RealtimeGateway
     this.server
       .to(deviceId)
       .emit('device-availability', { v: 1, deviceId, available });
-    this.logger.debug(
+    this.logger.log(
       `Broadcasted availability for device ${deviceId}: ${available ? 'AVAILABLE' : 'UNAVAILABLE'}`,
     );
   }
@@ -114,6 +114,7 @@ export class RealtimeGateway
     @ConnectedSocket() client: Socket,
   ) {
     if (!data?.deviceId) return;
+    this.logger.log(`Join request from ${client.id} for ${data.deviceId}`);
     const now = Date.now();
     const last = this.joinRateLimit.get(client.id) ?? 0;
     if (now - last < 1000) {
